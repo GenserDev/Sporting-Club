@@ -250,3 +250,15 @@ model Descuento {
 
   vehiculo    Vehiculo? @relation(fields: [vehiculoId], references: [id])
 }
+
+model MantenimientoVehiculo {
+  id          Int       @id @default(autoincrement())
+  vehiculoId  Int
+  clienteId   Int
+  fecha       DateTime  @default(now())
+  descripcion String
+  costo       Decimal   @db.Decimal(10,2)
+
+  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+}
