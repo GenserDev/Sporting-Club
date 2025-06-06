@@ -38,7 +38,9 @@ model Sede {
   nombre    String
   direccion String
 
-  empleados Empleado[]
+  empleados           Empleado[]
+  empleadoSucursales  EmpleadoSucursal[]
+  inventarios         Inventario[]
 }
 
 model Usuario {
@@ -52,6 +54,8 @@ model Usuario {
 
   cliente    Cliente?  @relation("ClienteUsuario", fields: [clienteId], references: [id])
   clienteId  Int?      @unique
+
+  roles      Role[]    @relation("RoleUsuario")
 }
 
 model Empleado {
@@ -63,6 +67,8 @@ model Empleado {
   sede      Sede      @relation(fields: [sedeId], references: [id])
   usuario   Usuario?  @relation("EmpleadoUsuario")
   facturas  Factura[]
+  pagos     Pago[]
+  empleadoSucursales EmpleadoSucursal[]
 }
 
 model Cliente {
@@ -73,6 +79,8 @@ model Cliente {
 
   usuario   Usuario?  @relation("ClienteUsuario")
   facturas  Factura[]
+  pagos     Pago[]
+  mantenimientos MantenimientoVehiculo[]
 }
 
 model Marca {
@@ -101,9 +109,20 @@ model Vehiculo {
   tipoCombustible TipoCombustible // Tipo de combustible (Gasolina, Diesel, Eléctrico, Híbrido)
   torque          Int             // Torque del motor en Nm
   caballos        Int             // Caballos de fuerza
+  categoriaId     Int?
 
   marca           Marca           @relation(fields: [marcaId], references: [id])
   detalles        DetalleFactura[]
+  facturaVehiculos FacturaVehiculo[]
+  historial       HistorialVehiculo[]
+  proveedor       Proveedor?      @relation("ProveedorVehiculo", fields: [proveedorId], references: [id])
+  proveedorId     Int?
+  promociones     Promocion[]
+  inventarios     Inventario[]
+  devoluciones    Devolucion[]
+  descuentos      Descuento[]
+  mantenimientos  MantenimientoVehiculo[]
+  categoria       Categoria?      @relation("CategoriaVehiculo", fields: [categoriaId], references: [id])
 }
 
 enum TipoCombustible {
@@ -124,6 +143,8 @@ model Factura {
   cliente     Cliente        @relation(fields: [clienteId], references: [id])
   empleado    Empleado       @relation(fields: [empleadoId], references: [id])
   detalles    DetalleFactura[]
+  facturaVehiculos FacturaVehiculo[]
+  devoluciones Devolucion[]
 }
 
 model DetalleFactura {
@@ -141,7 +162,7 @@ model Categoria {
   id          Int        @id @default(autoincrement())
   nombre      String     @unique
   descripcion String?
-  vehiculos   Vehiculo[]
+  vehiculos   Vehiculo[] @relation("CategoriaVehiculo")
 }
 
 model Pago {
@@ -183,7 +204,7 @@ model Proveedor {
   telefono    String
   correo      String?    @unique
   direccion   String?
-  vehiculos   Vehiculo[]
+  vehiculos   Vehiculo[] @relation("ProveedorVehiculo")
 }
 
 model Promocion {
@@ -207,7 +228,7 @@ model Role {
   id          Int        @id @default(autoincrement())
   nombre      String     @unique
   descripcion String
-  usuarios    Usuario[]
+  usuarios    Usuario[]  @relation("RoleUsuario")
 }
 
 model EmpleadoSucursal {
