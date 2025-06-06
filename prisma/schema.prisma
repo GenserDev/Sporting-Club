@@ -13,3 +13,110 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+
+
+
+enum Rol {
+  COMPRADOR
+  VENDEDOR
+}
+
+enum EstadoVehiculo {
+  NUEVO
+  USADO
+}
+
+enum MedioPago {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+}
+
+model Sede {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  direccion String
+
+  empleados Empleado[]
+}
+
+model Usuario {
+  id         Int      @id @default(autoincrement())
+  correo     String   @unique
+  password   String
+  rol        Rol
+
+  empleado   Empleado?
+  empleadoId Int?     @unique
+
+  cliente    Cliente?
+  clienteId  Int?     @unique
+}
+
+model Empleado {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  puesto    String
+  sedeId    Int
+
+  sede      Sede      @relation(fields: [sedeId], references: [id])
+  usuario   Usuario?
+  facturas  Factura[]
+}
+
+model Cliente {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  telefono  String
+  correo    String   @unique
+
+  usuario   Usuario?
+  facturas  Factura[]
+}
+
+model Marca {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  pais_origen String?
+
+  vehiculos   Vehiculo[]
+}
+
+model Vehiculo {
+  id         Int             @id @default(autoincrement())
+  modelo     String
+  anio       Int
+  color      String
+  estado     EstadoVehiculo
+  precio     Decimal         @db.Decimal(10,2)
+  disponible Boolean         @default(true)
+  marcaId    Int
+
+  marca      Marca           @relation(fields: [marcaId], references: [id])
+  detalles   DetalleFactura[]
+}
+
+model Factura {
+  id          Int            @id @default(autoincrement())
+  fecha       DateTime       @default(now())
+  medioPago   MedioPago
+  clienteId   Int
+  empleadoId  Int
+  total       Decimal        @db.Decimal(10,2)
+
+  cliente     Cliente        @relation(fields: [clienteId], references: [id])
+  empleado    Empleado       @relation(fields: [empleadoId], references: [id])
+  detalles    DetalleFactura[]
+}
+
+model DetalleFactura {
+  id         Int       @id @default(autoincrement())
+  facturaId  Int
+  vehiculoId Int
+  precio     Decimal   @db.Decimal(10,2)
+  descuento  Decimal   @default(0.0) @db.Decimal(10,2)
+
+  factura    Factura   @relation(fields: [facturaId], references: [id])
+  vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
+}
