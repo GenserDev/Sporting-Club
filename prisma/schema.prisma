@@ -84,17 +84,33 @@ model Marca {
 }
 
 model Vehiculo {
-  id         Int             @id @default(autoincrement())
-  modelo     String
-  anio       Int
-  color      String
-  estado     EstadoVehiculo
-  precio     Decimal         @db.Decimal(10,2)
-  disponible Boolean         @default(true)
-  marcaId    Int
+  id              Int             @id @default(autoincrement())
+  modelo          String
+  anio            Int
+  color           String
+  estado          EstadoVehiculo
+  linea           String          // Línea del vehículo (SUV, Sedán, etc.)
+  kilometraje     Int             // Kilometraje del vehículo
+  precio          Decimal         @db.Decimal(10,2)
+  precio_original Decimal         @db.Decimal(10,2) // Precio original del vehículo
+  disponible      Boolean         @default(true)
+  marcaId         Int
+  airbags         Int             // Número de airbags
+  puntuacionSeguridad Int         // Puntuación de seguridad
+  motor           String          // Descripción del motor
+  tipoCombustible TipoCombustible // Tipo de combustible (Gasolina, Diesel, Eléctrico, Híbrido)
+  torque          Int             // Torque del motor en Nm
+  caballos        Int             // Caballos de fuerza
 
-  marca      Marca           @relation(fields: [marcaId], references: [id])
-  detalles   DetalleFactura[]
+  marca           Marca           @relation(fields: [marcaId], references: [id])
+  detalles        DetalleFactura[]
+}
+
+enum TipoCombustible {
+  GASOLINA
+  DIESEL
+  ELECTRICO
+  HIBRIDO
 }
 
 model Factura {
@@ -119,4 +135,88 @@ model DetalleFactura {
 
   factura    Factura   @relation(fields: [facturaId], references: [id])
   vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
+}
+
+model Categoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+  vehiculos   Vehiculo[]
+}
+
+model Pago {
+  id         Int       @id @default(autoincrement())
+  monto      Decimal   @db.Decimal(10,2)
+  fecha      DateTime  @default(now())
+  medioPago  MedioPago
+  clienteId  Int
+  empleadoId Int
+
+  cliente    Cliente   @relation(fields: [clienteId], references: [id])
+  empleado   Empleado  @relation(fields: [empleadoId], references: [id])
+}
+
+model FacturaVehiculo {
+  facturaId  Int
+  vehiculoId Int
+  precio     Decimal   @db.Decimal(10,2)
+  descuento  Decimal   @default(0.0) @db.Decimal(10,2)
+
+  factura    Factura   @relation(fields: [facturaId], references: [id])
+  vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
+
+  @@id([facturaId, vehiculoId])
+}
+
+model HistorialVehiculo {
+  id         Int       @id @default(autoincrement())
+  vehiculoId Int
+  fecha      DateTime  @default(now())
+  descripcion String
+
+  vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
+}
+
+model Proveedor {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  telefono    String
+  correo      String?    @unique
+  direccion   String?
+  vehiculos   Vehiculo[]
+}
+
+model Promocion {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  descuento   Decimal    @db.Decimal(5,2)
+  vehiculoId  Int
+
+  vehiculo    Vehiculo   @relation(fields: [vehiculoId], references: [id])
+}
+
+model Reporte {
+  id          Int        @id @default(autoincrement())
+  fecha       DateTime   @default(now())
+  tipo        String
+  descripcion String
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String
+  usuarios    Usuario[]
+}
+
+model EmpleadoSucursal {
+  empleadoId Int
+  sedeId     Int
+  horario    String
+
+  empleado   Empleado  @relation(fields: [empleadoId], references: [id])
+  sede       Sede      @relation(fields: [sedeId], references: [id])
+
+  @@id([empleadoId, sedeId])
 }
