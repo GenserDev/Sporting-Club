@@ -220,3 +220,33 @@ model EmpleadoSucursal {
 
   @@id([empleadoId, sedeId])
 }
+model Inventario {
+  id          Int       @id @default(autoincrement())
+  vehiculoId  Int
+  cantidad    Int
+  sedeId      Int
+
+  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  sede        Sede      @relation(fields: [sedeId], references: [id])
+}
+
+model Devolucion {
+  id          Int       @id @default(autoincrement())
+  facturaId   Int
+  vehiculoId  Int
+  fecha       DateTime  @default(now())
+  motivo      String
+  cantidad    Int
+
+  factura     Factura   @relation(fields: [facturaId], references: [id])
+  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
+}
+
+model Descuento {
+  id          Int       @id @default(autoincrement())
+  descripcion String
+  porcentaje  Decimal   @db.Decimal(5,2)
+  vehiculoId  Int?
+
+  vehiculo    Vehiculo? @relation(fields: [vehiculoId], references: [id])
+}
