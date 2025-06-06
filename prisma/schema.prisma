@@ -47,11 +47,11 @@ model Usuario {
   password   String
   rol        Rol
 
-  empleado   Empleado?
-  empleadoId Int?     @unique
+  empleado   Empleado? @relation("EmpleadoUsuario", fields: [empleadoId], references: [id])
+  empleadoId Int?      @unique
 
-  cliente    Cliente?
-  clienteId  Int?     @unique
+  cliente    Cliente?  @relation("ClienteUsuario", fields: [clienteId], references: [id])
+  clienteId  Int?      @unique
 }
 
 model Empleado {
@@ -61,7 +61,7 @@ model Empleado {
   sedeId    Int
 
   sede      Sede      @relation(fields: [sedeId], references: [id])
-  usuario   Usuario?
+  usuario   Usuario?  @relation("EmpleadoUsuario")
   facturas  Factura[]
 }
 
@@ -71,7 +71,7 @@ model Cliente {
   telefono  String
   correo    String   @unique
 
-  usuario   Usuario?
+  usuario   Usuario?  @relation("ClienteUsuario")
   facturas  Factura[]
 }
 
