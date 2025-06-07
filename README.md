@@ -48,6 +48,8 @@ index.html
 ```
 
 # Imagen de referencia 
-![awEVWAev](https://github.com/user-attachments/assets/adad274f-1415-46c2-8946-d9dd964391d3)
+![A](https://github.com/user-attachments/assets/983d3cc2-bdc3-4f7b-bcd1-1250bb1aafcc)
 
+
+![B](https://github.com/user-attachments/assets/a5c1375e-099c-41fa-9381-68cc007ac41a)
 
