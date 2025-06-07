@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -14,9 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
-
+// ENUMS - Tipos de datos personalizados (5 requeridos)
 enum Rol {
   COMPRADOR
   VENDEDOR
@@ -33,21 +24,57 @@ enum MedioPago {
   TRANSFERENCIA
 }
 
+enum TipoCombustible {
+  GASOLINA
+  DIESEL
+  ELECTRICO
+  HIBRIDO
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  PAGADA
+  CANCELADA
+  ANULADA
+}
+
+enum TipoMantenimiento {
+  PREVENTIVO
+  CORRECTIVO
+  REVISION
+  EMERGENCIA
+}
+
+enum EstadoInventario {
+  DISPONIBLE
+  RESERVADO
+  VENDIDO
+  MANTENIMIENTO
+}
+
 model Sede {
   id        Int        @id @default(autoincrement())
-  nombre    String
-  direccion String
-
+  nombre    String     @db.VarChar(100)
+  direccion String     @db.VarChar(255)
+  telefono  String?    @db.VarChar(20)
+  ciudad    String     @default("Guatemala") @db.VarChar(50)
+  activa    Boolean    @default(true)
+  
   empleados           Empleado[]
   empleadoSucursales  EmpleadoSucursal[]
   inventarios         Inventario[]
+  
+  @@map("sedes")
 }
 
 model Usuario {
   id         Int      @id @default(autoincrement())
-  correo     String   @unique
-  password   String
+  correo     String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
   rol        Rol
+  activo     Boolean  @default(true)
+  fechaCreacion DateTime @default(now())
+  ultimoAcceso  DateTime?
 
   empleado   Empleado? @relation("EmpleadoUsuario", fields: [empleadoId], references: [id])
   empleadoId Int?      @unique
@@ -56,12 +83,18 @@ model Usuario {
   clienteId  Int?      @unique
 
   roles      Role[]    @relation("RoleUsuario")
+  
+  @@map("usuarios")
 }
 
 model Empleado {
   id        Int       @id @default(autoincrement())
-  nombre    String
-  puesto    String
+  nombre    String    @db.VarChar(100)
+  apellido  String    @db.VarChar(100)
+  puesto    String    @db.VarChar(50)
+  salario   Decimal?  @db.Decimal(10,2)
+  fechaContratacion DateTime @default(now())
+  activo    Boolean   @default(true)
   sedeId    Int
 
   sede      Sede      @relation(fields: [sedeId], references: [id])
@@ -69,217 +102,302 @@ model Empleado {
   facturas  Factura[]
   pagos     Pago[]
   empleadoSucursales EmpleadoSucursal[]
+  
+  @@map("empleados")
 }
 
 model Cliente {
   id        Int       @id @default(autoincrement())
-  nombre    String
-  telefono  String
-  correo    String   @unique
+  nombre    String    @db.VarChar(100)
+  apellido  String    @db.VarChar(100)
+  telefono  String    @db.VarChar(20)
+  correo    String    @unique @db.VarChar(150)
+  direccion String?   @db.VarChar(255)
+  dpi       String?   @unique @db.VarChar(20)
+  fechaNacimiento DateTime?
+  activo    Boolean   @default(true)
 
   usuario   Usuario?  @relation("ClienteUsuario")
   facturas  Factura[]
   pagos     Pago[]
   mantenimientos MantenimientoVehiculo[]
+  
+  @@map("clientes")
 }
 
 model Marca {
   id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  pais_origen String?
+  nombre      String     @unique @db.VarChar(50)
+  paisOrigen  String?    @db.VarChar(50)
+  aniofundacion Int?
+  activa      Boolean    @default(true)
 
   vehiculos   Vehiculo[]
+  
+  @@map("marcas")
+}
+
+model Categoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique @db.VarChar(50)
+  descripcion String?    @db.Text
+  activa      Boolean    @default(true)
+  
+  vehiculos   Vehiculo[] @relation("CategoriaVehiculo")
+  
+  @@map("categorias")
 }
 
 model Vehiculo {
   id              Int             @id @default(autoincrement())
-  modelo          String
+  modelo          String          @db.VarChar(100)
   anio            Int
-  color           String
+  color           String          @db.VarChar(30)
   estado          EstadoVehiculo
-  linea           String          // Línea del vehículo (SUV, Sedán, etc.)
-  kilometraje     Int             // Kilometraje del vehículo
-  precio          Decimal         @db.Decimal(10,2)
-  precio_original Decimal         @db.Decimal(10,2) // Precio original del vehículo
+  linea           String          @db.VarChar(50)
+  kilometraje     Int             @default(0)
+  precio          Decimal         @db.Decimal(12,2)
+  precioOriginal  Decimal         @db.Decimal(12,2)
   disponible      Boolean         @default(true)
   marcaId         Int
-  airbags         Int             // Número de airbags
-  puntuacionSeguridad Int         // Puntuación de seguridad
-  motor           String          // Descripción del motor
-  tipoCombustible TipoCombustible // Tipo de combustible (Gasolina, Diesel, Eléctrico, Híbrido)
-  torque          Int             // Torque del motor en Nm
-  caballos        Int             // Caballos de fuerza
+  airbags         Int             @default(0)
+  puntuacionSeguridad Int         @default(0)
+  motor           String          @db.VarChar(100)
+  tipoCombustible TipoCombustible
+  torque          Int             @default(0)
+  caballos        Int             @default(0)
   categoriaId     Int?
+  proveedorId     Int?
+  fechaIngreso    DateTime        @default(now())
+  numeroSerie     String?         @unique @db.VarChar(50)
+  numeroMotor     String?         @unique @db.VarChar(50)
 
   marca           Marca           @relation(fields: [marcaId], references: [id])
+  categoria       Categoria?      @relation("CategoriaVehiculo", fields: [categoriaId], references: [id])
+  proveedor       Proveedor?      @relation("ProveedorVehiculo", fields: [proveedorId], references: [id])
+  
   detalles        DetalleFactura[]
   facturaVehiculos FacturaVehiculo[]
   historial       HistorialVehiculo[]
-  proveedor       Proveedor?      @relation("ProveedorVehiculo", fields: [proveedorId], references: [id])
-  proveedorId     Int?
   promociones     Promocion[]
   inventarios     Inventario[]
   devoluciones    Devolucion[]
   descuentos      Descuento[]
   mantenimientos  MantenimientoVehiculo[]
-  categoria       Categoria?      @relation("CategoriaVehiculo", fields: [categoriaId], references: [id])
+  
+  @@map("vehiculos")
 }
 
-enum TipoCombustible {
-  GASOLINA
-  DIESEL
-  ELECTRICO
-  HIBRIDO
+model Proveedor {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @db.VarChar(100)
+  telefono    String     @db.VarChar(20)
+  correo      String?    @unique @db.VarChar(150)
+  direccion   String?    @db.VarChar(255)
+  contacto    String?    @db.VarChar(100)
+  activo      Boolean    @default(true)
+  
+  vehiculos   Vehiculo[] @relation("ProveedorVehiculo")
+  
+  @@map("proveedores")
 }
 
 model Factura {
   id          Int            @id @default(autoincrement())
+  numero      String         @unique @default(uuid()) @db.VarChar(50)
   fecha       DateTime       @default(now())
   medioPago   MedioPago
+  estado      EstadoFactura  @default(PENDIENTE)
   clienteId   Int
   empleadoId  Int
-  total       Decimal        @db.Decimal(10,2)
+  subtotal    Decimal        @db.Decimal(12,2)
+  impuestos   Decimal        @default(0) @db.Decimal(12,2)
+  total       Decimal        @db.Decimal(12,2)
+  observaciones String?      @db.Text
 
   cliente     Cliente        @relation(fields: [clienteId], references: [id])
   empleado    Empleado       @relation(fields: [empleadoId], references: [id])
   detalles    DetalleFactura[]
   facturaVehiculos FacturaVehiculo[]
   devoluciones Devolucion[]
+  
+  @@map("facturas")
 }
 
 model DetalleFactura {
   id         Int       @id @default(autoincrement())
   facturaId  Int
   vehiculoId Int
-  precio     Decimal   @db.Decimal(10,2)
-  descuento  Decimal   @default(0.0) @db.Decimal(10,2)
+  cantidad   Int       @default(1)
+  precio     Decimal   @db.Decimal(12,2)
+  descuento  Decimal   @default(0.0) @db.Decimal(5,2)
+  subtotal   Decimal   @db.Decimal(12,2)
 
   factura    Factura   @relation(fields: [facturaId], references: [id])
   vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
-}
-
-model Categoria {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String?
-  vehiculos   Vehiculo[] @relation("CategoriaVehiculo")
+  
+  @@map("detalle_facturas")
 }
 
 model Pago {
   id         Int       @id @default(autoincrement())
-  monto      Decimal   @db.Decimal(10,2)
+  numero     String    @unique @default(uuid()) @db.VarChar(50)
+  monto      Decimal   @db.Decimal(12,2)
   fecha      DateTime  @default(now())
   medioPago  MedioPago
+  referencia String?   @db.VarChar(100)
   clienteId  Int
   empleadoId Int
 
   cliente    Cliente   @relation(fields: [clienteId], references: [id])
   empleado   Empleado  @relation(fields: [empleadoId], references: [id])
+  
+  @@map("pagos")
 }
 
+// Tabla de cruce N:M - Factura-Vehiculo
 model FacturaVehiculo {
   facturaId  Int
   vehiculoId Int
-  precio     Decimal   @db.Decimal(10,2)
-  descuento  Decimal   @default(0.0) @db.Decimal(10,2)
+  cantidad   Int       @default(1)
+  precio     Decimal   @db.Decimal(12,2)
+  descuento  Decimal   @default(0.0) @db.Decimal(5,2)
 
   factura    Factura   @relation(fields: [facturaId], references: [id])
   vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
 
   @@id([facturaId, vehiculoId])
+  @@map("factura_vehiculos")
+}
+
+// Tabla de cruce N:M - Empleado-Sucursal
+model EmpleadoSucursal {
+  empleadoId Int
+  sedeId     Int
+  horario    String    @db.VarChar(100)
+  fechaAsignacion DateTime @default(now())
+  activo     Boolean   @default(true)
+
+  empleado   Empleado  @relation(fields: [empleadoId], references: [id])
+  sede       Sede      @relation(fields: [sedeId], references: [id])
+
+  @@id([empleadoId, sedeId])
+  @@map("empleado_sucursales")
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique @db.VarChar(50)
+  descripcion String     @db.Text
+  activo      Boolean    @default(true)
+  
+  usuarios    Usuario[]  @relation("RoleUsuario")
+  
+  @@map("roles")
+}
+
+model Inventario {
+  id          Int       @id @default(autoincrement())
+  vehiculoId  Int
+  cantidad    Int       @default(0)
+  cantidadMinima Int    @default(1)
+  sedeId      Int
+  estado      EstadoInventario @default(DISPONIBLE)
+  fechaActualizacion DateTime @default(now())
+
+  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  sede        Sede      @relation(fields: [sedeId], references: [id])
+  
+  @@unique([vehiculoId, sedeId])
+  @@map("inventarios")
 }
 
 model HistorialVehiculo {
   id         Int       @id @default(autoincrement())
   vehiculoId Int
   fecha      DateTime  @default(now())
-  descripcion String
+  accion     String    @db.VarChar(50)
+  descripcion String   @db.Text
+  usuarioId  Int?
 
   vehiculo   Vehiculo  @relation(fields: [vehiculoId], references: [id])
-}
-
-model Proveedor {
-  id          Int        @id @default(autoincrement())
-  nombre      String
-  telefono    String
-  correo      String?    @unique
-  direccion   String?
-  vehiculos   Vehiculo[] @relation("ProveedorVehiculo")
+  
+  @@map("historial_vehiculos")
 }
 
 model Promocion {
   id          Int        @id @default(autoincrement())
-  nombre      String
-  descripcion String
+  nombre      String     @db.VarChar(100)
+  descripcion String     @db.Text
   descuento   Decimal    @db.Decimal(5,2)
-  vehiculoId  Int
+  fechaInicio DateTime
+  fechaFin    DateTime
+  activa      Boolean    @default(true)
+  vehiculoId  Int?
 
-  vehiculo    Vehiculo   @relation(fields: [vehiculoId], references: [id])
-}
-
-model Reporte {
-  id          Int        @id @default(autoincrement())
-  fecha       DateTime   @default(now())
-  tipo        String
-  descripcion String
-}
-
-model Role {
-  id          Int        @id @default(autoincrement())
-  nombre      String     @unique
-  descripcion String
-  usuarios    Usuario[]  @relation("RoleUsuario")
-}
-
-model EmpleadoSucursal {
-  empleadoId Int
-  sedeId     Int
-  horario    String
-
-  empleado   Empleado  @relation(fields: [empleadoId], references: [id])
-  sede       Sede      @relation(fields: [sedeId], references: [id])
-
-  @@id([empleadoId, sedeId])
-}
-model Inventario {
-  id          Int       @id @default(autoincrement())
-  vehiculoId  Int
-  cantidad    Int
-  sedeId      Int
-
-  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
-  sede        Sede      @relation(fields: [sedeId], references: [id])
-}
-
-model Devolucion {
-  id          Int       @id @default(autoincrement())
-  facturaId   Int
-  vehiculoId  Int
-  fecha       DateTime  @default(now())
-  motivo      String
-  cantidad    Int
-
-  factura     Factura   @relation(fields: [facturaId], references: [id])
-  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  vehiculo    Vehiculo?  @relation(fields: [vehiculoId], references: [id])
+  
+  @@map("promociones")
 }
 
 model Descuento {
   id          Int       @id @default(autoincrement())
-  descripcion String
+  codigo      String    @unique @db.VarChar(20)
+  descripcion String    @db.VarChar(255)
   porcentaje  Decimal   @db.Decimal(5,2)
+  montoFijo   Decimal?  @db.Decimal(10,2)
+  fechaInicio DateTime
+  fechaFin    DateTime
+  activo      Boolean   @default(true)
   vehiculoId  Int?
 
   vehiculo    Vehiculo? @relation(fields: [vehiculoId], references: [id])
+  
+  @@map("descuentos")
+}
+
+model Devolucion {
+  id          Int       @id @default(autoincrement())
+  numero      String    @unique @default(uuid()) @db.VarChar(50)
+  facturaId   Int
+  vehiculoId  Int
+  fecha       DateTime  @default(now())
+  motivo      String    @db.Text
+  cantidad    Int       @default(1)
+  montoDevolucion Decimal @db.Decimal(12,2)
+  aprobada    Boolean   @default(false)
+
+  factura     Factura   @relation(fields: [facturaId], references: [id])
+  vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  
+  @@map("devoluciones")
 }
 
 model MantenimientoVehiculo {
   id          Int       @id @default(autoincrement())
   vehiculoId  Int
   clienteId   Int
+  tipo        TipoMantenimiento
   fecha       DateTime  @default(now())
-  descripcion String
+  descripcion String    @db.Text
   costo       Decimal   @db.Decimal(10,2)
+  completado  Boolean   @default(false)
+  proximoMantenimiento DateTime?
 
   vehiculo    Vehiculo  @relation(fields: [vehiculoId], references: [id])
   cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  
+  @@map("mantenimiento_vehiculos")
+}
+
+model Reporte {
+  id          Int        @id @default(autoincrement())
+  titulo      String     @db.VarChar(150)
+  fecha       DateTime   @default(now())
+  tipo        String     @db.VarChar(50)
+  descripcion String     @db.Text
+  parametros  Json?    @db.Json
+  generadoPor Int?
+  
+  @@map("reportes")
 }
