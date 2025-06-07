@@ -4,19 +4,32 @@
   "description": "Project 4 for my Base Data class",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "dev": "nodemon index.js",
+    "start": "node index.js",  
+    "test": "jest",
+    "prisma": "prisma",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "node prisma/seed.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Tu Nombre",
   "license": "ISC",
   "dependencies": {
+    "@faker-js/faker": "^9.8.0",
     "@prisma/client": "^6.9.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "nodemon": "^3.1.0",  
     "prisma": "^6.9.0",
     "supertest": "^7.1.1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

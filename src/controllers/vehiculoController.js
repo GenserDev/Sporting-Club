@@ -1,95 +1,66 @@
-const prisma = require('../generated/prisma/client');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// Crear un nuevo vehículo
-exports.createVehiculo = async (req, res) => {
-  try {
-    const vehiculo = await prisma.vehiculo.create({
-      data: {
-        modelo: req.body.modelo,
-        anio: req.body.anio,
-        color: req.body.color,
-        estado: req.body.estado,
-        linea: req.body.linea,
-        kilometraje: req.body.kilometraje,
-        precio: req.body.precio,
-        precio_original: req.body.precio_original,
-        marcaId: req.body.marcaId,
-        airbags: req.body.airbags,
-        puntuacionSeguridad: req.body.puntuacionSeguridad,
-        motor: req.body.motor,
-        tipoCombustible: req.body.tipoCombustible,
-        torque: req.body.torque,
-        caballos: req.body.caballos,
-      },
-    });
-    res.status(201).json(vehiculo); // Devuelve el vehículo creado
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// Obtener todos los vehículos
 exports.getAllVehiculos = async (req, res) => {
   try {
-    const vehiculos = await prisma.vehiculo.findMany();
-    res.status(200).json(vehiculos); // Devuelve todos los vehículos
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// Obtener un vehículo por su ID
-exports.getVehiculoById = async (req, res) => {
-  try {
-    const vehiculo = await prisma.vehiculo.findUnique({
-      where: { id: parseInt(req.params.id) },
+    const vehiculos = await prisma.vehiculos.findMany({
+      include: {
+        marca: { select: { nombre: true } },
+        categoria: { select: { nombre: true } }
+      }
     });
-    if (!vehiculo) {
-      return res.status(404).json({ error: "Vehículo no encontrado" });
-    }
-    res.status(200).json(vehiculo);
+    res.json(vehiculos);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error al obtener vehículos:", error);
+    res.status(500).json({ 
+      error: 'Error al obtener vehículos',
+      details: error.message 
+    });
   }
 };
 
-// Actualizar un vehículo por su ID
-exports.updateVehiculo = async (req, res) => {
+exports.createVehiculo = async (req, res) => {
+  const { modelo, anio, color, precio, marcaId, categoriaId } = req.body;
   try {
-    const vehiculo = await prisma.vehiculo.update({
-      where: { id: parseInt(req.params.id) },
+    const nuevoVehiculo = await prisma.vehiculos.create({
       data: {
-        modelo: req.body.modelo,
-        anio: req.body.anio,
-        color: req.body.color,
-        estado: req.body.estado,
-        linea: req.body.linea,
-        kilometraje: req.body.kilometraje,
-        precio: req.body.precio,
-        precio_original: req.body.precio_original,
-        marcaId: req.body.marcaId,
-        airbags: req.body.airbags,
-        puntuacionSeguridad: req.body.puntuacionSeguridad,
-        motor: req.body.motor,
-        tipoCombustible: req.body.tipoCombustible,
-        torque: req.body.torque,
-        caballos: req.body.caballos,
-      },
+        modelo,
+        anio: parseInt(anio),
+        color,
+        precio: parseFloat(precio),
+        marcaId: parseInt(marcaId),
+        categoriaId: parseInt(categoriaId),
+        estado: 'DISPONIBLE',
+        disponible: true
+      }
     });
-    res.status(200).json(vehiculo); // Devuelve el vehículo actualizado
+    res.status(201).json(nuevoVehiculo);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: 'Error al crear vehículo' });
   }
 };
 
-// Eliminar un vehículo por su ID
-exports.deleteVehiculo = async (req, res) => {
+exports.updateVehiculo = async (req, res) => {
+  const { id } = req.params;
   try {
-    await prisma.vehiculo.delete({
-      where: { id: parseInt(req.params.id) },
+    const vehiculoActualizado = await prisma.vehiculos.update({
+      where: { id: parseInt(id) },
+      data: req.body
     });
-    res.status(204).send(); // Eliminado correctamente
+    res.json(vehiculoActualizado);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: "Error actualizando vehículo" });
+  }
+};
+
+exports.deleteVehiculo = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.vehiculos.delete({
+      where: { id: parseInt(id) }
+    });
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: "Error eliminando vehículo" });
   }
 };
